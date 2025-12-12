@@ -72,7 +72,7 @@ namespace HotelBackOffice.Controllers
                             }
                         }
 
-                        if (registerDto.Email == "alandonati7@gmail.com")
+                        if (registerDto.Email == "admin@admin.com")
                         {
                             await this._userManager.AddToRoleAsync(user, "Amministratore");
                         }
