@@ -1,4 +1,5 @@
 using HotelBackOffice.Models.Entity;
+using HotelBackOffice.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -8,12 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
-//Coonfigurazione Db
+
 builder.Services.AddDbContext<AppDbContext>(options =>
       options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-//Configurazione Identity
+
 builder.Services.AddIdentity<AppUser, IdentityRole>(option =>
 {
     option.SignIn.RequireConfirmedPhoneNumber = false;
@@ -42,6 +43,11 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 
+builder.Services.AddScoped<ClientiService>();
+builder.Services.AddScoped<CamereService>();
+builder.Services.AddScoped<PrenotazioniService>();
+builder.Services.AddScoped<AdminService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -59,7 +65,6 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
 
 
 app.MapControllerRoute(

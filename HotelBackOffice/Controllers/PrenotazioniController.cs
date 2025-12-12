@@ -1,63 +1,45 @@
-﻿
-using HotelBackOffice.Models.Entity;
+﻿using HotelBackOffice.Models.Entity;
+using HotelBackOffice.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
 
 namespace HotelBackOffice.Controllers
 {
     [Authorize]
     public class PrenotazioniController : Controller
     {
-        private readonly AppDbContext _context;
+        private readonly PrenotazioniService _prenotazioniService;
 
-        public PrenotazioniController(AppDbContext context)
+        public PrenotazioniController(PrenotazioniService prenotazioniService)
         {
-            _context = context;
+            _prenotazioniService = prenotazioniService;
         }
-
 
         [Authorize(Roles = "Amministratore,Receptionist,Visualizzatore")]
         public async Task<IActionResult> Index()
         {
-            var prenotazioni = await _context.Prenotazioni
-                .Include(p => p.Cliente)
-                .Include(p => p.Camera)
-                .OrderByDescending(p => p.DataInizio)
-                .ToListAsync();
-
+            var prenotazioni = await _prenotazioniService.GetAllPrenotazioniAsync();
             return View(prenotazioni);
         }
-
 
         [Authorize(Roles = "Amministratore,Receptionist,Visualizzatore")]
         public async Task<IActionResult> GetDetailsPartial(int id)
         {
-            var prenotazione = await _context.Prenotazioni
-                .Include(p => p.Cliente)
-                .Include(p => p.Camera)
-                .FirstOrDefaultAsync(p => p.PrenotazioneId == id);
-
+            var prenotazione = await _prenotazioniService.GetPrenotazioneWithDetailsAsync(id);
             if (prenotazione == null)
             {
                 return NotFound();
             }
-
             return PartialView("_DetailsPartial", prenotazione);
         }
-
 
         [Authorize(Roles = "Amministratore,Receptionist")]
         public async Task<IActionResult> GetCreatePartial()
         {
-
-            ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome");
-            ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero");
-
+            await LoadDropdowns();
             return PartialView("_CreatePartial", new Prenotazione());
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -70,58 +52,48 @@ namespace HotelBackOffice.Controllers
 
             if (ModelState.IsValid)
             {
-
                 if (prenotazione.DataFine <= prenotazione.DataInizio)
                 {
                     ModelState.AddModelError("DataFine", "La data fine deve essere successiva alla data inizio");
-                    ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome");
-                    ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero");
+                    await LoadDropdowns();
                     return PartialView("_CreatePartial", prenotazione);
                 }
 
+                var disponibile = await _prenotazioniService.IsCameraDisponibileAsync(
+                    prenotazione.CameraId,
+                    prenotazione.DataInizio,
+                    prenotazione.DataFine);
 
-                var cameraOccupata = await _context.Prenotazioni
-                    .AnyAsync(p => p.CameraId == prenotazione.CameraId &&
-                                   p.Stato != "Cancellata" &&
-                                   ((p.DataInizio <= prenotazione.DataInizio && p.DataFine > prenotazione.DataInizio) ||
-                                    (p.DataInizio < prenotazione.DataFine && p.DataFine >= prenotazione.DataFine) ||
-                                    (p.DataInizio >= prenotazione.DataInizio && p.DataFine <= prenotazione.DataFine)));
-
-                if (cameraOccupata)
+                if (!disponibile)
                 {
                     ModelState.AddModelError("CameraId", "Camera non disponibile per le date selezionate");
-                    ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome");
-                    ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero");
+                    await LoadDropdowns();
                     return PartialView("_CreatePartial", prenotazione);
                 }
 
-                _context.Add(prenotazione);
-                await _context.SaveChangesAsync();
-
-                return Json(new { success = true, message = "Prenotazione creata con successo!" });
+                var success = await _prenotazioniService.CreatePrenotazioneAsync(prenotazione);
+                if (success)
+                {
+                    return Json(new { success = true, message = "Prenotazione creata con successo!" });
+                }
             }
 
-            ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome");
-            ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero");
+            await LoadDropdowns();
             return PartialView("_CreatePartial", prenotazione);
         }
-
 
         [Authorize(Roles = "Amministratore,Receptionist")]
         public async Task<IActionResult> GetEditPartial(int id)
         {
-            var prenotazione = await _context.Prenotazioni.FindAsync(id);
+            var prenotazione = await _prenotazioniService.GetPrenotazioneByIdAsync(id);
             if (prenotazione == null)
             {
                 return NotFound();
             }
 
-            ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome", prenotazione.ClienteId);
-            ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero", prenotazione.CameraId);
-
+            await LoadDropdowns(prenotazione.ClienteId, prenotazione.CameraId);
             return PartialView("_EditPartial", prenotazione);
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -137,88 +109,65 @@ namespace HotelBackOffice.Controllers
                 if (prenotazione.DataFine <= prenotazione.DataInizio)
                 {
                     ModelState.AddModelError("DataFine", "La data fine deve essere successiva alla data inizio");
-                    ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome");
-                    ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero");
+                    await LoadDropdowns(prenotazione.ClienteId, prenotazione.CameraId);
                     return PartialView("_EditPartial", prenotazione);
                 }
 
-                // Verifica disponibilità camera (escludendo la prenotazione corrente)
-                var cameraOccupata = await _context.Prenotazioni
-                    .AnyAsync(p => p.CameraId == prenotazione.CameraId &&
-                                   p.PrenotazioneId != prenotazione.PrenotazioneId &&
-                                   p.Stato != "Cancellata" &&
-                                   ((p.DataInizio <= prenotazione.DataInizio && p.DataFine > prenotazione.DataInizio) ||
-                                    (p.DataInizio < prenotazione.DataFine && p.DataFine >= prenotazione.DataFine) ||
-                                    (p.DataInizio >= prenotazione.DataInizio && p.DataFine <= prenotazione.DataFine)));
+                var disponibile = await _prenotazioniService.IsCameraDisponibileAsync(
+                    prenotazione.CameraId,
+                    prenotazione.DataInizio,
+                    prenotazione.DataFine,
+                    prenotazione.PrenotazioneId);
 
-                if (cameraOccupata)
+                if (!disponibile)
                 {
                     ModelState.AddModelError("CameraId", "Camera non disponibile per le date selezionate");
-                    ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome");
-                    ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero");
+                    await LoadDropdowns(prenotazione.ClienteId, prenotazione.CameraId);
                     return PartialView("_EditPartial", prenotazione);
                 }
 
-                try
+                var success = await _prenotazioniService.UpdatePrenotazioneAsync(prenotazione);
+                if (success)
                 {
-                    _context.Update(prenotazione);
-                    await _context.SaveChangesAsync();
                     return Json(new { success = true, message = "Prenotazione modificata con successo!" });
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!PrenotazioneExists(prenotazione.PrenotazioneId))
-                    {
-                        return NotFound();
-                    }
-                    throw;
                 }
             }
 
-            ViewBag.Clienti = new SelectList(await _context.Clienti.ToListAsync(), "ClienteId", "Cognome");
-            ViewBag.Camere = new SelectList(await _context.Camere.ToListAsync(), "CameraId", "Numero");
+            await LoadDropdowns(prenotazione.ClienteId, prenotazione.CameraId);
             return PartialView("_EditPartial", prenotazione);
         }
-
 
         [Authorize(Roles = "Amministratore,Receptionist")]
         public async Task<IActionResult> GetDeletePartial(int id)
         {
-            var prenotazione = await _context.Prenotazioni
-                .Include(p => p.Cliente)
-                .Include(p => p.Camera)
-                .FirstOrDefaultAsync(p => p.PrenotazioneId == id);
-
+            var prenotazione = await _prenotazioniService.GetPrenotazioneWithDetailsAsync(id);
             if (prenotazione == null)
             {
                 return NotFound();
             }
-
             return PartialView("_DeletePartial", prenotazione);
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Amministratore,Receptionist")]
         public async Task<IActionResult> DeletePrenotazione(int id)
         {
-            var prenotazione = await _context.Prenotazioni.FindAsync(id);
-
-            if (prenotazione == null)
+            var success = await _prenotazioniService.DeletePrenotazioneAsync(id);
+            if (success)
             {
-                return Json(new { success = false, message = "Prenotazione non trovata" });
+                return Json(new { success = true, message = "Prenotazione eliminata con successo!" });
             }
-
-            _context.Prenotazioni.Remove(prenotazione);
-            await _context.SaveChangesAsync();
-
-            return Json(new { success = true, message = "Prenotazione eliminata con successo!" });
+            return Json(new { success = false, message = "Prenotazione non trovata" });
         }
 
-        private bool PrenotazioneExists(int id)
+        private async Task LoadDropdowns(int? clienteId = null, int? cameraId = null)
         {
-            return _context.Prenotazioni.Any(e => e.PrenotazioneId == id);
+            var clienti = await _prenotazioniService.GetAllClientiAsync();
+            var camere = await _prenotazioniService.GetAllCamereAsync();
+
+            ViewBag.Clienti = new SelectList(clienti, "ClienteId", "Cognome", clienteId);
+            ViewBag.Camere = new SelectList(camere, "CameraId", "Numero", cameraId);
         }
     }
 }
