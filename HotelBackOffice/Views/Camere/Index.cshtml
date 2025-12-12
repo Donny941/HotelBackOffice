@@ -1,0 +1,170 @@
+﻿@model IEnumerable<HotelBackOffice.Models.Entity.Camera>
+
+@{
+    ViewData["Title"] = "Gestione Camere";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-door-open"></i> Gestione Camere</h2>
+        @if (User.IsInRole("Amministratore") || User.IsInRole("Receptionist"))
+        {
+            <button type="button" class="btn btn-primary" onclick="apriModalCreate()">
+                <i class="bi bi-plus-circle"></i> Nuova Camera
+            </button>
+        }
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="camereTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Numero</th>
+                            <th>Tipo</th>
+                            <th>Prezzo</th>
+                            <th class="text-center">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr id="camera-@item.CameraId">
+                                    <td><strong>@item.Numero</strong></td>
+                                    <td>@item.Tipo</td>
+                                    <td>€ @item.Prezzo.ToString("N2")</td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-info" onclick="apriModalDettagli(@item.CameraId)" title="Dettagli">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            @if (User.IsInRole("Amministratore") || User.IsInRole("Receptionist"))
+                                            {
+                                                <button class="btn btn-sm btn-warning" onclick="apriModalModifica(@item.CameraId)" title="Modifica">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="apriModalElimina(@item.CameraId)" title="Elimina">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    Nessuna camera registrata
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="cameraModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="modalContent">
+          
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function mostraAlert(messaggio, tipo) {
+            const alert = `
+                <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                    ${messaggio}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('#alertContainer').html(alert);
+
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+
+        function apriModalCreate() {
+            $.get('/Camere/GetCreatePartial', function(data) {
+                $('#modalContent').html(data);
+                $('#cameraModal').modal('show');
+            });
+        }
+
+        function apriModalDettagli(id) {
+            $.get('/Camere/GetDetailsPartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#cameraModal').modal('show');
+            });
+        }
+
+        function apriModalModifica(id) {
+            $.get('/Camere/GetEditPartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#cameraModal').modal('show');
+            });
+        }
+
+        function apriModalElimina(id) {
+            $.get('/Camere/GetDeletePartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#cameraModal').modal('show');
+            });
+        }
+
+        function inviaForm(form) {
+            $.ajax({
+                url: $(form).attr('action'),
+                type: 'POST',
+                data: $(form).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#cameraModal').modal('hide');
+                        mostraAlert(response.message, 'success');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        $('#modalContent').html(response);
+                    }
+                }
+            });
+            return false;
+        }
+
+        function confermaEliminazione(form) {
+            const cameraId = $(form).find('input[name="id"]').val();
+
+            $.ajax({
+                url: '/Camere/DeleteCamera/' + cameraId,
+                type: 'POST',
+                data: $(form).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#cameraModal').modal('hide');
+                        mostraAlert(response.message, 'success');
+                        $('#camera-' + cameraId).fadeOut(500, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        mostraAlert(response.message, 'danger');
+                    }
+                }
+            });
+            return false;
+        }
+    </script>
+}

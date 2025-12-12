@@ -1,0 +1,35 @@
+﻿@model HotelBackOffice.Models.Entity.Prenotazione
+
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">Elimina Prenotazione</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form asp-action="DeletePrenotazione" asp-controller="Prenotazioni" method="post" onsubmit="return confermaEliminazione(this)">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.PrenotazioneId" />
+
+    <div class="modal-body">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Attenzione!</strong> Sei sicuro di voler eliminare questa prenotazione?
+        </div>
+
+        <p><strong>Cliente:</strong> @Model.Cliente.Nome @Model.Cliente.Cognome</p>
+        <p><strong>Camera:</strong> @Model.Camera.Numero - @Model.Camera.Tipo</p>
+        <p><strong>Periodo:</strong> Dal @Model.DataInizio.ToString("dd/MM/yyyy") al @Model.DataFine.ToString("dd/MM/yyyy")</p>
+        <p>
+            <strong>Stato:</strong>
+            <span class="badge bg-@(Model.Stato == "Confermata" ? "success" : Model.Stato == "Cancellata" ? "danger" : "warning")">
+                @Model.Stato
+            </span>
+        </p>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="submit" class="btn btn-danger">
+            <i class="bi bi-trash"></i> Elimina
+        </button>
+    </div>
+</form>

@@ -1,0 +1,181 @@
+﻿@model IEnumerable<HotelBackOffice.Models.Entity.Cliente>
+
+@{
+    ViewData["Title"] = "Gestione Clienti";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestione Clienti</h2>
+        @if (User.IsInRole("Amministratore") || User.IsInRole("Receptionist"))
+        {
+            <button type="button" class="btn btn-primary" onclick="apriModalCreate()">
+                <i class="bi bi-plus-circle"></i> Nuovo Cliente
+            </button>
+        }
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover" id="clientiTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nome</th>
+                            <th>Cognome</th>
+                            <th>Email</th>
+                            <th>Telefono</th>
+                            <th class="text-center">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr id="cliente-@item.ClienteId">
+                                    <td>@item.Nome</td>
+                                    <td>@item.Cognome</td>
+                                    <td>@item.Email</td>
+                                    <td>@item.Telefono</td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-info" onclick="apriModalDettagli(@item.ClienteId)" title="Dettagli">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            @if (User.IsInRole("Amministratore") || User.IsInRole("Receptionist"))
+                                            {
+                                                <button class="btn btn-sm btn-warning" onclick="apriModalModifica(@item.ClienteId)" title="Modifica">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-danger" onclick="apriModalElimina(@item.ClienteId)" title="Elimina">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    Nessun cliente registrato
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="clienteModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" id="modalContent">
+            
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+      
+        function mostraAlert(messaggio, tipo) {
+            const alert = `
+                <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                    ${messaggio}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('#alertContainer').html(alert);
+
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+
+        
+        function apriModalCreate() {
+            $.get('/Clienti/GetCreatePartial', function(data) {
+                $('#modalContent').html(data);
+                $('#clienteModal').modal('show');
+            });
+        }
+
+  
+        function apriModalDettagli(id) {
+            $.get('/Clienti/GetDetailsPartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#clienteModal').modal('show');
+            });
+        }
+
+      
+        function apriModalModifica(id) {
+            $.get('/Clienti/GetEditPartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#clienteModal').modal('show');
+            });
+        }
+
+      
+        function apriModalElimina(id) {
+            $.get('/Clienti/GetDeletePartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#clienteModal').modal('show');
+            });
+        }
+
+       
+        function inviaForm(form) {
+            $.ajax({
+                url: $(form).attr('action'),
+                type: 'POST',
+                data: $(form).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#clienteModal').modal('hide');
+                        mostraAlert(response.message, 'success');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                     
+                        $('#modalContent').html(response);
+                    }
+                }
+            });
+            return false;
+        }
+
+       
+        function confermaEliminazione(form) {
+            const clienteId = $(form).find('input[name="id"]').val();
+
+            $.ajax({
+                url: '/Clienti/DeleteCliente/' + clienteId,
+                type: 'POST',
+                data: $(form).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#clienteModal').modal('hide');
+                        mostraAlert(response.message, 'success');
+                      
+                        $('#cliente-' + clienteId).fadeOut(500, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        mostraAlert(response.message, 'danger');
+                    }
+                }
+            });
+            return false;
+        }
+    </script>
+}

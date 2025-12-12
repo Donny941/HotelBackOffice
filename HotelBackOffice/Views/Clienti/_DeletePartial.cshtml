@@ -1,0 +1,40 @@
+﻿@model HotelBackOffice.Models.Entity.Cliente
+
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">Elimina Cliente</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form asp-action="DeleteCliente" asp-controller="Clienti" method="post" onsubmit="return confermaEliminazione(this)">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.ClienteId" />
+
+    <div class="modal-body">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Attenzione!</strong> Sei sicuro di voler eliminare questo cliente?
+        </div>
+
+        <p><strong>Nome:</strong> @Model.Nome @Model.Cognome</p>
+        <p><strong>Email:</strong> @Model.Email</p>
+        <p><strong>Telefono:</strong> @Model.Telefono</p>
+
+        @if (Model.Prenotazioni != null && Model.Prenotazioni.Any())
+        {
+            <div class="alert alert-danger">
+                <strong>Impossibile eliminare!</strong>
+                Questo cliente ha @Model.Prenotazioni.Count prenotazione/i.
+            </div>
+        }
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        @if (Model.Prenotazioni == null || !Model.Prenotazioni.Any())
+        {
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Elimina
+            </button>
+        }
+    </div>
+</form>

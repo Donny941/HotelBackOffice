@@ -1,0 +1,55 @@
+﻿@model HotelBackOffice.Models.Entity.Camera
+
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">Nuova Camera</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form asp-action="CreateCamera" asp-controller="Camere" method="post" onsubmit="return inviaForm(this)">
+    @Html.AntiForgeryToken()
+
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Numero" class="form-label">Numero Camera</label>
+                    <input asp-for="Numero" class="form-control" placeholder="es. 101" />
+                    <span asp-validation-for="Numero" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="Tipo" class="form-label">Tipo Camera</label>
+                    <select asp-for="Tipo" class="form-select">
+                        <option value="">Seleziona tipo</option>
+                        <option value="Singola">Singola</option>
+                        <option value="Doppia">Doppia</option>
+                        <option value="Matrimoniale">Matrimoniale</option>
+                        <option value="Suite">Suite</option>
+                        <option value="Deluxe">Deluxe</option>
+                    </select>
+                    <span asp-validation-for="Tipo" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Prezzo" class="form-label">Prezzo per Notte (€)</label>
+            <input asp-for="Prezzo" class="form-control" type="number" step="0.01" min="0" placeholder="es. 80.00" />
+            <span asp-validation-for="Prezzo" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Salva
+        </button>
+    </div>
+</form>
+
+<script>
+    $.validator.unobtrusive.parse($('form'));
+</script>

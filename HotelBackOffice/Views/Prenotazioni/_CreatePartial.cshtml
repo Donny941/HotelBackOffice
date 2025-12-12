@@ -1,0 +1,75 @@
+﻿@model HotelBackOffice.Models.Entity.Prenotazione
+
+<div class="modal-header bg-primary text-white">
+    <h5 class="modal-title">Nuova Prenotazione</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form asp-action="CreatePrenotazione" asp-controller="Prenotazioni" method="post" onsubmit="return inviaForm(this)">
+    @Html.AntiForgeryToken()
+
+    <div class="modal-body">
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="ClienteId" class="form-label">Cliente</label>
+                    <select asp-for="ClienteId" class="form-select" asp-items="ViewBag.Clienti">
+                        <option value="">Seleziona cliente</option>
+                    </select>
+                    <span asp-validation-for="ClienteId" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="CameraId" class="form-label">Camera</label>
+                    <select asp-for="CameraId" class="form-select" asp-items="ViewBag.Camere">
+                        <option value="">Seleziona camera</option>
+                    </select>
+                    <span asp-validation-for="CameraId" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="DataInizio" class="form-label">Data Check-in</label>
+                    <input asp-for="DataInizio" class="form-control" type="date" />
+                    <span asp-validation-for="DataInizio" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="DataFine" class="form-label">Data Check-out</label>
+                    <input asp-for="DataFine" class="form-control" type="date" />
+                    <span asp-validation-for="DataFine" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Stato" class="form-label">Stato</label>
+            <select asp-for="Stato" class="form-select">
+                <option value="">Seleziona stato</option>
+                <option value="In Attesa">In Attesa</option>
+                <option value="Confermata">Confermata</option>
+                <option value="Completata">Completata</option>
+                <option value="Cancellata">Cancellata</option>
+            </select>
+            <span asp-validation-for="Stato" class="text-danger"></span>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Salva
+        </button>
+    </div>
+</form>
+
+<script>
+    $.validator.unobtrusive.parse($('form'));
+</script>

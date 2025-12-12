@@ -1,0 +1,59 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="container mt-5">
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        <div class="text-center mb-5">
+            <h1>Benvenuto, @User.Identity.Name!</h1>
+            <p class="text-muted">
+                @if (User.IsInRole("Amministratore"))
+                {
+                    <span class="badge bg-danger">Amministratore</span>
+                }
+                else if (User.IsInRole("Receptionist"))
+                {
+                    <span class="badge bg-primary">Receptionist</span>
+                }
+                else if (User.IsInRole("Visualizzatore"))
+                {
+                    <span class="badge bg-secondary">Visualizzatore</span>
+                }
+            </p>
+        </div>
+
+        <div class="row text-center">
+            <div class="col-md-12">
+                <div class="card shadow">
+                    <div class="card-body">
+                        <h4>Sistema di Gestione Hotel</h4>
+                        <p class="text-muted">Usa il menu di navigazione per accedere alle funzionalità</p>
+                        <hr />
+                        <p class="mb-0">
+                            <i class="bi bi-people"></i> Clienti &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <i class="bi bi-door-open"></i> Camere &nbsp;&nbsp;|&nbsp;&nbsp;
+                            <i class="bi bi-calendar-check"></i> Prenotazioni
+                            @if (User.IsInRole("Amministratore"))
+                            {
+                                <span>&nbsp;&nbsp;|&nbsp;&nbsp; <i class="bi bi-gear"></i> Amministrazione</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center">
+            <h1 class="display-4 mb-4">Hotel BackOffice</h1>
+            <p class="lead mb-5">Sistema di gestione per hotel</p>
+
+            <a asp-controller="AuthUser" asp-action="Login" class="btn btn-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i> Accedi
+            </a>
+        </div>
+    }
+</div>

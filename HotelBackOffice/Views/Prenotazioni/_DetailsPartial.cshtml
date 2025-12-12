@@ -1,0 +1,60 @@
+﻿@model HotelBackOffice.Models.Entity.Prenotazione
+
+<div class="modal-header bg-info text-white">
+    <h5 class="modal-title">Dettagli Prenotazione</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+    <div class="row">
+        <div class="col-md-6">
+            <h6 class="text-muted mb-3">Informazioni Cliente</h6>
+            <p><strong>Nome:</strong> @Model.Cliente.Nome @Model.Cliente.Cognome</p>
+            <p><strong>Email:</strong> <a href="mailto:@Model.Cliente.Email">@Model.Cliente.Email</a></p>
+            <p><strong>Telefono:</strong> <a href="tel:@Model.Cliente.Telefono">@Model.Cliente.Telefono</a></p>
+        </div>
+
+        <div class="col-md-6">
+            <h6 class="text-muted mb-3">Informazioni Camera</h6>
+            <p><strong>Numero:</strong> @Model.Camera.Numero</p>
+            <p><strong>Tipo:</strong> <span class="badge bg-primary">@Model.Camera.Tipo</span></p>
+            <p><strong>Prezzo:</strong> <span class="text-success fw-bold">€ @Model.Camera.Prezzo.ToString("N2")</span> / notte</p>
+        </div>
+    </div>
+
+    <hr />
+
+    <div class="row">
+        <div class="col-md-12">
+            <h6 class="text-muted mb-3">Dettagli Soggiorno</h6>
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>Check-in:</strong><br />@Model.DataInizio.ToString("dd/MM/yyyy")</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>Check-out:</strong><br />@Model.DataFine.ToString("dd/MM/yyyy")</p>
+                </div>
+                <div class="col-md-4">
+                    <p>
+                        <strong>Stato:</strong><br />
+                        <span class="badge bg-@(Model.Stato == "Confermata" ? "success" : Model.Stato == "Cancellata" ? "danger" : "warning")">
+                            @Model.Stato
+                        </span>
+                    </p>
+                </div>
+            </div>
+            <p><strong>Durata:</strong> @((Model.DataFine - Model.DataInizio).Days) notti</p>
+            <p><strong>Totale:</strong> <span class="text-success fw-bold fs-5">€ @((Model.DataFine - Model.DataInizio).Days * Model.Camera.Prezzo).ToString("N2")</span></p>
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+    @if (User.IsInRole("Amministratore") || User.IsInRole("Receptionist"))
+    {
+        <button type="button" class="btn btn-warning" onclick="$('#prenotazioneModal').modal('hide'); apriModalModifica(@Model.PrenotazioneId)">
+            <i class="bi bi-pencil"></i> Modifica
+        </button>
+    }
+</div>

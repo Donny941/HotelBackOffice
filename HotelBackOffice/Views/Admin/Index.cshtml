@@ -1,0 +1,160 @@
+﻿@model List<HotelBackOffice.Models.Dto.UserWithRoleDto>
+
+@{
+    ViewData["Title"] = "Gestione Dipendenti";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people-fill"></i> Gestione Dipendenti</h2>
+        <button type="button" class="btn btn-primary" onclick="apriModalCreate()">
+            <i class="bi bi-person-plus"></i> Nuovo Dipendente
+        </button>
+    </div>
+
+    <div id="alertContainer"></div>
+
+    <div class="card shadow">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nome</th>
+                            <th>Cognome</th>
+                            <th>Email</th>
+                            <th>Ruolo</th>
+                            <th class="text-center">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Any())
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr id="user-@item.Id">
+                                    <td>@item.Nome</td>
+                                    <td>@item.Cognome</td>
+                                    <td>@item.Email</td>
+                                    <td>
+                                        <span class="badge bg-@(item.Ruolo == "Amministratore" ? "danger" : item.Ruolo == "Receptionist" ? "primary" : "secondary")">
+                                            @item.Ruolo
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-warning" onclick="apriModalModifica('@item.Id')" title="Modifica">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="apriModalElimina('@item.Id')" title="Elimina">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    Nessun dipendente registrato
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="dipendenteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" id="modalContent">
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function mostraAlert(messaggio, tipo) {
+            const alert = `
+                <div class="alert alert-${tipo} alert-dismissible fade show" role="alert">
+                    ${messaggio}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('#alertContainer').html(alert);
+
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+
+        function apriModalCreate() {
+            $.get('/Admin/GetCreatePartial', function(data) {
+                $('#modalContent').html(data);
+                $('#dipendenteModal').modal('show');
+            });
+        }
+
+        function apriModalModifica(id) {
+            $.get('/Admin/GetEditPartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#dipendenteModal').modal('show');
+            });
+        }
+
+        function apriModalElimina(id) {
+            $.get('/Admin/GetDeletePartial/' + id, function(data) {
+                $('#modalContent').html(data);
+                $('#dipendenteModal').modal('show');
+            });
+        }
+
+        function inviaForm(form) {
+            $.ajax({
+                url: $(form).attr('action'),
+                type: 'POST',
+                data: $(form).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#dipendenteModal').modal('hide');
+                        mostraAlert(response.message, 'success');
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        $('#modalContent').html(response);
+                    }
+                }
+            });
+            return false;
+        }
+
+        function confermaEliminazione(form) {
+            const userId = $(form).find('input[name="id"]').val();
+
+            $.ajax({
+                url: '/Admin/DeleteDipendente/' + userId,
+                type: 'POST',
+                data: $(form).serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        $('#dipendenteModal').modal('hide');
+                        mostraAlert(response.message, 'success');
+                        $('#user-' + userId).fadeOut(500, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        mostraAlert(response.message, 'danger');
+                    }
+                }
+            });
+            return false;
+        }
+    </script>
+}

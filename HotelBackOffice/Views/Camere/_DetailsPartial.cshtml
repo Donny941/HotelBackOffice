@@ -1,0 +1,54 @@
+﻿@model HotelBackOffice.Models.Entity.Camera
+
+<div class="modal-header bg-info text-white">
+    <h5 class="modal-title">Dettagli Camera</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<div class="modal-body">
+    <div class="row">
+        <div class="col-md-6">
+            <h6 class="text-muted mb-3">Informazioni Camera</h6>
+            <p><strong>Numero:</strong> @Model.Numero</p>
+            <p><strong>Tipo:</strong> <span class="badge bg-primary">@Model.Tipo</span></p>
+            <p><strong>Prezzo:</strong> <span class="text-success fw-bold">€ @Model.Prezzo.ToString("N2")</span> / notte</p>
+        </div>
+
+        <div class="col-md-6">
+            <h6 class="text-muted mb-3">Prenotazioni</h6>
+            @if (Model.Prenotazioni != null && Model.Prenotazioni.Any())
+            {
+                <ul class="list-group">
+                    @foreach (var p in Model.Prenotazioni.OrderByDescending(x => x.DataInizio).Take(5))
+                    {
+                        <li class="list-group-item">
+                            <strong>@p.Cliente.Nome @p.Cliente.Cognome</strong><br />
+                            <small>@p.DataInizio.ToString("dd/MM/yyyy") - @p.DataFine.ToString("dd/MM/yyyy")</small><br />
+                            <span class="badge bg-@(p.Stato == "Confermata" ? "success" : p.Stato == "Cancellata" ? "danger" : "warning")">
+                                @p.Stato
+                            </span>
+                        </li>
+                    }
+                </ul>
+                @if (Model.Prenotazioni.Count() > 5)
+                {
+                    <small class="text-muted d-block mt-2">Mostrando le ultime 5 prenotazioni</small>
+                }
+            }
+            else
+            {
+                <p class="text-muted">Nessuna prenotazione</p>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Chiudi</button>
+    @if (User.IsInRole("Amministratore") || User.IsInRole("Receptionist"))
+    {
+        <button type="button" class="btn btn-warning" onclick="$('#cameraModal').modal('hide'); apriModalModifica(@Model.CameraId)">
+            <i class="bi bi-pencil"></i> Modifica
+        </button>
+    }
+</div>

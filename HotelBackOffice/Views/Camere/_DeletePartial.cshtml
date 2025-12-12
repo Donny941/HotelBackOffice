@@ -1,0 +1,40 @@
+﻿@model HotelBackOffice.Models.Entity.Camera
+
+<div class="modal-header bg-danger text-white">
+    <h5 class="modal-title">Elimina Camera</h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form asp-action="DeleteCamera" asp-controller="Camere" method="post" onsubmit="return confermaEliminazione(this)">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" value="@Model.CameraId" />
+
+    <div class="modal-body">
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Attenzione!</strong> Sei sicuro di voler eliminare questa camera?
+        </div>
+
+        <p><strong>Numero:</strong> @Model.Numero</p>
+        <p><strong>Tipo:</strong> @Model.Tipo</p>
+        <p><strong>Prezzo:</strong> € @Model.Prezzo.ToString("N2")</p>
+
+        @if (Model.Prenotazioni != null && Model.Prenotazioni.Any())
+        {
+            <div class="alert alert-danger">
+                <strong>Impossibile eliminare!</strong>
+                Questa camera ha @Model.Prenotazioni.Count prenotazione/i associate.
+            </div>
+        }
+    </div>
+
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+        @if (Model.Prenotazioni == null || !Model.Prenotazioni.Any())
+        {
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Elimina
+            </button>
+        }
+    </div>
+</form>
